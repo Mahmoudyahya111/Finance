@@ -2161,5 +2161,65 @@
             refreshAllViews();
         };
     </script>
+    <script>
+  // 1. Register physical Service Worker for GitHub Pages PWA Installability
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('./sw.js')
+        .then(reg => console.log('Service Worker registered:', reg.scope))
+        .catch(err => console.warn('SW registration failed:', err));
+    });
+  }
+
+  // 2. Always-Visible PWA Install Button + Prompt Handler
+  let deferredInstallPrompt = null;
+
+  const installBtn = document.createElement('button');
+  installBtn.id = 'pwa-install-floating-btn';
+  installBtn.innerHTML = '📲 Install App';
+  installBtn.style.cssText = `
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    z-index: 9999;
+    background: #4f46e5;
+    color: #ffffff;
+    border: none;
+    padding: 10px 16px;
+    border-radius: 999px;
+    font-family: sans-serif;
+    font-weight: 600;
+    font-size: 14px;
+    box-shadow: 0 10px 25px rgba(79, 70, 229, 0.4);
+    cursor: pointer;
+    display: none;
+    align-items: center;
+    gap: 6px;
+  `;
+  document.body.appendChild(installBtn);
+
+  window.addEventListener('beforeinstallprompt', (e) => {
+    e.preventDefault();
+    deferredInstallPrompt = e;
+    installBtn.style.display = 'flex';
+  });
+
+  installBtn.addEventListener('click', async () => {
+    if (deferredInstallPrompt) {
+      deferredInstallPrompt.prompt();
+      const { outcome } = await deferredInstallPrompt.userChoice;
+      if (outcome === 'accepted') {
+        installBtn.style.display = 'none';
+      }
+      deferredInstallPrompt = null;
+    } else {
+      alert('To install: Tap your browser menu (⋮) and select "Install app" or "Add to Home screen".');
+    }
+  });
+
+  window.addEventListener('appinstalled', () => {
+    installBtn.style.display = 'none';
+  });
+</script>
 </body>
 </html>
